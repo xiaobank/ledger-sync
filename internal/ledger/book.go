@@ -41,6 +41,17 @@ func (b *Book) GetAccount(id string) (*Account, error) {
 	return a, nil
 }
 
+// Accounts returns a snapshot of all accounts currently registered in the book.
+func (b *Book) Accounts() []*Account {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	list := make([]*Account, 0, len(b.accounts))
+	for _, a := range b.accounts {
+		list = append(list, a)
+	}
+	return list
+}
+
 // Post validates and applies a Transaction to the relevant accounts.
 func (b *Book) Post(tx *Transaction) error {
 	if tx == nil {
