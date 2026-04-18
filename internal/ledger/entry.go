@@ -3,11 +3,9 @@ package ledger
 import (
 	"errors"
 	"time"
-
-	"github.com/google/uuid"
 )
 
-// EntryType represents the side of a ledger entry.
+// EntryType distinguishes debit from credit entries.
 type EntryType string
 
 const (
@@ -15,65 +13,68 @@ const (
 	Credit EntryType = "credit"
 )
 
-// Entry represents a single line in a double-entry ledger.
+// Entry is a single line in a double-entry transaction.
 type Entry struct {
-	ID          string    `json:"id"`
-	TransactionID string  `json:"transaction_id"`
-	Account     string    `json:"account"`
-	Type        EntryType `json:"type"`
-	AmountCents int64     `json:"amount_cents"`
-	Currency    string    `json:"currency"`
-	CreatedAt   time.Time `json:"created_at"`
+	AccountID string
+	Type      EntryType
+	Amount    int64  // minor units (e.g. cents)
+	Currency  string // ISO 4217
 }
 
-// Transaction groups a balanced set of entries.
+// Transaction groups balanced entries under a single ID.
 type Transaction struct {
-	ID        string    `json:"id"`
-	Reference string    `json:"reference"`
-	Entries   []Entry   `json:"entries"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        string
+	CreatedAt time.Time
+	Entries   []Entry
 }
 
-// NewTransaction creates a validated double-entry transaction.
-func NewTransaction(reference string, entries []Entry) (*Transaction, error) {
+// NewTransaction validates and returns a Transaction.
+func NewTransaction(id string, entries []Entry) (*Transaction, error) {
+	if id == "" {
+		return nil, errors.New("transaction id must not be empty")
+	}
+	if len(entries) < 2 {
+		return nil, errors.New("transaction must have at least two entries")
+	}
+	for _, e := range entries {
+		if e.Amount <= 0 {
+			return nil, errors.New("entry amount must be positive")
+		}
+		if e.Currency == "" {
+			return nil, errors.New("entry currency must not be empty")
+		}
+		switch e.Type {
+		case Debit, Credit:
+		default:
+			return nil, errors.New("unknown entry type: " + string(e.Type))
+		}
+	}
 	if err := validateBalance(entries); err != nil {
 		return nil, err
 	}
-	txID := uuid.NewString()
-	now := time.Now().UTC()
-	for i := range entries {
-		if entries[i].ID == "" {
-			entries[i].ID = uuid.NewString()
-		}
-		entries[i].TransactionID = txID
-		entries[i].CreatedAt = now
-	}
 	return &Transaction{
-		ID:        txID,
-		Reference: reference,
+		ID:        id,
+		CreatedAt: time.Now().UTC(),
 		Entries:   entries,
-		CreatedAt: now,
 	}, nil
 }
 
-// validateBalance ensures debits equal credits within the same currency.
+// validateBalance ensures debits equal credits for each currency.
 func validateBalance(entries []Entry) error {
-	balance := make(map[string]int64)
+	type sums struct{ debit, credit int64 }
+	totals := make(map[string]*sums)
 	for _, e := range entries {
-		if e.AmountCents <= 0 {
-			return errors.New("amount_cents must be positive")
+		if _, ok := totals[e.Currency]; !ok {
+			totals[e.Currency] = &sums{}
 		}
-		switch e.Type {
-		case Debit:
-			balance[e.Currency] += e.AmountCents
-		case Credit:
-			balance[e.Currency] -= e.AmountCents
-		default:
-			return errors.New("invalid entry type: " + string(e.Type))
+		if e.Type == Debit {
+			totals[e.Currency].debit += e.Amount
+		} else {
+			totals[e.Currency].credit += e.Amount
 		}
 	}
-	for currency, net := range balance {
-		if net != 0 {
+	for currency, s := range totals {
+		if s.debit != s.credit {
 			return errors.New("transaction not balanced for currency: " + currency)
 		}
 	}
