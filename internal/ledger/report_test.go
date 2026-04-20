@@ -71,3 +71,16 @@ func TestBalanceReport_String(t *testing.T) {
 		t.Errorf("expected report string to contain account name 'Cash', got: %s", s)
 	}
 }
+
+func TestBalanceReport_String_Empty(t *testing.T) {
+	r := &BalanceReport{
+		Entries: []BalanceEntry{},
+	}
+	s := r.String()
+	if s == "" {
+		t.Error("expected non-empty report string even for empty entries")
+	}
+	if strings.Contains(s, "acc-") {
+		t.Errorf("expected no account entries in empty report string, got: %s", s)
+	}
+}
