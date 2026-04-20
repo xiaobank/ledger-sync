@@ -1,6 +1,7 @@
 package ledger
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -62,5 +63,11 @@ func TestBalanceReport_String(t *testing.T) {
 	s := r.String()
 	if s == "" {
 		t.Error("expected non-empty report string")
+	}
+	if !strings.Contains(s, "acc-cash") {
+		t.Errorf("expected report string to contain account ID 'acc-cash', got: %s", s)
+	}
+	if !strings.Contains(s, "Cash") {
+		t.Errorf("expected report string to contain account name 'Cash', got: %s", s)
 	}
 }
