@@ -53,6 +53,18 @@ func (a *Account) Balance(currency string) int64 {
 	return a.Balances[currency]
 }
 
+// Currencies returns a snapshot of all currency codes that have a recorded
+// balance on this account.
+func (a *Account) Currencies() []string {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	currencies := make([]string, 0, len(a.Balances))
+	for c := range a.Balances {
+		currencies = append(currencies, c)
+	}
+	return currencies
+}
+
 // apply adds delta (positive or negative minor units) to the account balance.
 func (a *Account) apply(currency string, delta int64) {
 	a.mu.Lock()
