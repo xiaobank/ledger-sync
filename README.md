@@ -26,7 +26,11 @@ Define your ledger entries and run a reconciliation check:
 ```go
 package main
 
-import "github.com/your-org/ledger-sync/ledger"
+import (
+    "log"
+
+    "github.com/your-org/ledger-sync/ledger"
+)
 
 func main() {
     l := ledger.New()
