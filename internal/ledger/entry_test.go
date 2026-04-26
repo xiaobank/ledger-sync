@@ -73,3 +73,21 @@ func TestNewTransaction_InvalidType(t *testing.T) {
 		t.Fatal("expected error for invalid entry type")
 	}
 }
+
+func TestNewTransaction_EmptyEntries(t *testing.T) {
+	_, err := NewTransaction("ref-006", []Entry{})
+	if err == nil {
+		t.Fatal("expected error for empty entries slice")
+	}
+}
+
+func TestNewTransaction_EmptyReference(t *testing.T) {
+	entries := []Entry{
+		{Account: "cash", Type: Debit, AmountCents: 1000, Currency: "USD"},
+		{Account: "revenue", Type: Credit, AmountCents: 1000, Currency: "USD"},
+	}
+	_, err := NewTransaction("", entries)
+	if err == nil {
+		t.Fatal("expected error for empty reference")
+	}
+}
