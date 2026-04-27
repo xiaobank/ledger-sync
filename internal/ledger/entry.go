@@ -43,6 +43,9 @@ func NewTransaction(id string, entries []Entry) (*Transaction, error) {
 		if e.Currency == "" {
 			return nil, errors.New("entry currency must not be empty")
 		}
+		if e.AccountID == "" {
+			return nil, errors.New("entry account id must not be empty")
+		}
 		switch e.Type {
 		case Debit, Credit:
 		default:
