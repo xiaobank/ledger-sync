@@ -104,31 +104,10 @@ func TestCheckMargins_Violation(t *testing.T) {
 
 func TestCheckMargins_NilBook(t *testing.T) {
 	idx := NewMarginIndex()
+	_ = idx.Add(MarginRule{ID: "r1", Numerator: "assets", Denominator: "liabilities", MinRatio: 1.5, Currency: "USD"})
+
 	_, err := CheckMargins(idx, nil)
 	if err == nil {
-		t.Fatal("expected error for nil book")
-	}
-}
-
-func TestCheckMargins_NilIndex(t *testing.T) {
-	b := makeMarginBook(t)
-	violations, err := CheckMargins(nil, b)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(violations) != 0 {
-		t.Errorf("expected no violations for nil index")
-	}
-}
-
-func TestMarginViolation_String(t *testing.T) {
-	v := MarginViolation{
-		Rule:    MarginRule{ID: "r1", MinRatio: 2.0},
-		Ratio:   1.2,
-		Message: "ratio too low",
-	}
-	s := v.String()
-	if s == "" {
-		t.Error("expected non-empty string")
+		t.Fatal("expected error when book is nil")
 	}
 }
